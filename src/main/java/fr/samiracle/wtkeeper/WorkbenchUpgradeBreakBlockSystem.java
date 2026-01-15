@@ -18,7 +18,9 @@ import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.modules.entity.item.ItemComponent;
 import com.hypixel.hytale.server.core.event.events.ecs.BreakBlockEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.universe.world.World;
+import com.hypixel.hytale.server.core.universe.world.SetBlockSettings;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.entity.entities.Player;
@@ -90,10 +92,18 @@ public class WorkbenchUpgradeBreakBlockSystem extends EntityEventSystem<EntitySt
             return;
         }
         commandBuffer.addEntity(dropHolder, AddReason.SPAWN);
+        dropContainerContents(commandBuffer, entityRef, world, pos);
 
         removeTierFromCache(world, pos);
         event.setCancelled(true);
-        world.setBlock(pos.x, pos.y, pos.z, BlockType.EMPTY.getId());
+        WorkbenchTierUtils.clearUpgradeItems(benchState);
+        world.setBlock(
+                pos.x,
+                pos.y,
+                pos.z,
+                BlockType.EMPTY.getId(),
+                SetBlockSettings.NO_DROP_ITEMS
+        );
     }
 
     @Override
@@ -120,6 +130,27 @@ public class WorkbenchUpgradeBreakBlockSystem extends EntityEventSystem<EntitySt
         WorkbenchUpgradeChunk data = WorkbenchTierUtils.getChunkData(world, pos, componentType);
         if (data != null) {
             data.removeTier(pos);
+        }
+    }
+
+    private void dropContainerContents(
+            CommandBuffer<EntityStore> commandBuffer,
+            Ref<EntityStore> entityRef,
+            World world,
+            Vector3i pos
+    ) {
+        ItemContainer container = WorkbenchTierUtils.getItemContainer(world, pos);
+        if (container == null || container.isEmpty()) {
+            return;
+        }
+        for (ItemStack stack : container.removeAllItemStacks()) {
+            if (stack == null || stack.isEmpty()) {
+                continue;
+            }
+            Holder<EntityStore> dropHolder = createDropHolder(commandBuffer, entityRef, stack, pos);
+            if (dropHolder != null) {
+                commandBuffer.addEntity(dropHolder, AddReason.SPAWN);
+            }
         }
     }
 

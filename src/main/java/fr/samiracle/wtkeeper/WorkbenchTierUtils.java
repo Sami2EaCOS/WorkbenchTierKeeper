@@ -8,9 +8,13 @@ import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
+import com.hypixel.hytale.server.core.universe.world.meta.state.ItemContainerBlockState;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
+
+import java.lang.reflect.Field;
 
 final class WorkbenchTierUtils {
 
@@ -55,6 +59,32 @@ final class WorkbenchTierUtils {
             return (BenchState) state;
         }
         return null;
+    }
+
+    static ItemContainer getItemContainer(World world, Vector3i pos) {
+        long chunkIndex = ChunkUtil.indexChunkFromBlock(pos.x, pos.z);
+        WorldChunk worldChunk = world.getChunkIfLoaded(chunkIndex);
+        if (worldChunk == null) {
+            return null;
+        }
+        Object state = worldChunk.getState(pos.x, pos.y, pos.z);
+        if (state instanceof ItemContainerBlockState) {
+            return ((ItemContainerBlockState) state).getItemContainer();
+        }
+        return null;
+    }
+
+    static void clearUpgradeItems(BenchState benchState) {
+        if (benchState == null) {
+            return;
+        }
+        try {
+            Field upgradeItems = BenchState.class.getDeclaredField("upgradeItems");
+            upgradeItems.setAccessible(true);
+            upgradeItems.set(benchState, new ItemStack[0]);
+        } catch (ReflectiveOperationException ignored) {
+            // Best-effort: avoid upgrade item drops when the field layout changes.
+        }
     }
 
     static BlockType resolveBlockType(ItemStack itemStack) {
