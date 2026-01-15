@@ -1,0 +1,17 @@
+{
+  "Group": "Samiracle",
+  "Name": "WorkbenchTierKeeper",
+  "Version": "1.0.0",
+  "Description": "Keep workbench upgrade tiers on break/place.",
+  "Authors": [
+    {
+      "Name": "Samiracle"
+    }
+  ],
+  "ServerVersion": "*",
+  "Dependencies": {},
+  "OptionalDependencies": {},
+  "DisabledByDefault": false,
+  "Main": "fr.samiracle.wtkeeper.WorkbenchTierKeeper",
+  "IncludesAssetPack": true
+}
